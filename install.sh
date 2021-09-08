@@ -8,10 +8,10 @@ BRANCH=debian
 UDIR=/home/$USERNAME
 
 # TODO install python versions, venv, flask, etc
-
 step_gate () {
 	TARGET=$1
 	CHECK_FILE=$SETUP_PROGRESS_DIR/$TARGET
+  mkdir -p $SETUP_PROGRESS_DIR
 	shift
 	if [ ! -f $CHECK_FILE ]; then
 		echo "running setup/install step: $TARGET"
@@ -23,7 +23,7 @@ step_gate () {
 
 setup_sudoers () {
 	echo "\$run these commands as root"
-	echo "adduser k sudo"
+	echo "adduser $USERNAME sudo"
 	echo "sudo apt-get install sudo -y"
 	read -n 1 -p "press any letter to continue to su -"
 	su -
@@ -82,12 +82,13 @@ install_chrome () {
 
 setup_git () {
 	sudo -u $USERNAME ssh-keygen -t ed25519 -C $EMAIL
-	eval "$(ssh-agent -s)"
-	sudo -u $USERNAME ssh-add /home/$USERNAME/.ssh/id_ed25519
+	eval "$(sudo -u $USERNAME ssh-agent -s)"
+	ssh-add /home/$USERNAME/.ssh/id_ed25519
 	sudo -u $USERNAME xclip -selection clipboard < /home/$USERNAME/.ssh/id_ed25519.pub
 	sudo -u $USERNAME google-chrome-stable https://github.com/settings/ssh/new
 	read -n 1 -p "press any letter to continue after adding ssh key to github"
 }
+
 setup_dotfiles () {
 	cd /home/$USERNAME
   sudo -u $USERNAME git init
@@ -160,7 +161,7 @@ install_docker () {
     apt-key fingerprint 0EBFCD88
     sudo -u $USERNAME curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
     add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
-    
+
     apt-cache policy docker-ce
     apt-get install docker-ce docker-ce-cli containerd.io -y
     curl -L "https://github.com/docker/compose/releases/download/1.27.4/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
